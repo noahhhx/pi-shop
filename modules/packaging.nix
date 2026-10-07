@@ -12,6 +12,7 @@
         cp ${../AGENTS.md} $out/AGENTS.md
         ${lib.optionalString (builtins.pathExists ../skills) "cp -r ${../skills} $out/skills"}
         ${lib.optionalString (builtins.pathExists ../extensions) "cp -r ${../extensions} $out/extensions"}
+        ${lib.optionalString (builtins.pathExists ../pstack) "cp -rL ${../pstack} $out/pstack"}
       '';
 
       # Apps take a plain outPath string (not the package value) so

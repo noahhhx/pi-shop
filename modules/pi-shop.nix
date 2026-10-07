@@ -49,6 +49,14 @@
           )
       );
 
+      # The vendored pstack tree, staged where pi does not discover it.
+      # The pstack-toggle extension (a first-party extension above) is the
+      # sole writer of the ~/.pi/agent/skills/ and extensions/ links that
+      # make it reachable; a rebuild only re-points this staging link.
+      pstackStaging = lib.optionalAttrs (builtins.pathExists ../pstack) {
+        ".pi/agent/pstack-available".source = ../pstack;
+      };
+
       # The portable base from this repo, with the consumer's optional
       # machine-specific additions appended.
       agentsMd =
@@ -81,7 +89,8 @@
         }
         // packagedResources
         // firstPartyExtensions
-        // portableSkills;
+        // portableSkills
+        // pstackStaging;
       };
     };
 

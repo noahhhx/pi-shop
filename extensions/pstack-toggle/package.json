@@ -1,0 +1,12 @@
+{
+  "name": "pstack-toggle",
+  "version": "0.1.0",
+  "description": "Master on/off switch for the vendored pstack stack in ~/.pi/agent/.",
+  "private": true,
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  }
+}

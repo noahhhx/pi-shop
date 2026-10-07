@@ -11,18 +11,22 @@
     "url": "git+https://github.com/noahhhx/pi-shop.git"
   },
   "dependencies": {
-    "@ff-labs/pi-fff": "0.11.0"
+    "@ff-labs/pi-fff": "0.11.0",
+    "pi-herdr-agents": "3.0.1"
   },
   "pi": {
     "extensions": [
       "extensions",
-      "node_modules/@ff-labs/pi-fff"
+      "node_modules/@ff-labs/pi-fff",
+      "node_modules/pi-herdr-agents"
     ],
     "skills": [
-      "skills"
+      "skills",
+      "node_modules/pi-herdr-agents/skills"
     ]
   },
   "bundleDependencies": [
-    "@ff-labs/pi-fff"
+    "@ff-labs/pi-fff",
+    "pi-herdr-agents"
   ]
 }

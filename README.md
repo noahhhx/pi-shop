@@ -11,9 +11,13 @@ package, or as a plain git repo.
 - `skills/` — portable skills (a directory with a `SKILL.md` each;
   machine-specific skills stay in the consuming repo)
 - `extensions/` — first-party extensions (`.ts` files or package dirs)
+- `pstack/` — the vendored [pstack](https://github.com/cursor/plugins/tree/main/pstack)
+  stack (poteto-mode + 48 skills + 2 agent roles), inert until toggled on;
+  see [pstack](#pstack)
 - `package.json` / `package-lock.json` — third-party pi packages (npm
   dependencies, currently
-  [pi-fff](https://github.com/dmtrKovalenko/fff/tree/main/packages/pi-fff));
+  [pi-fff](https://github.com/dmtrKovalenko/fff/tree/main/packages/pi-fff) and
+  [pi-herdr-agents](https://github.com/giuseppecrj/pi-herdr-agents));
   see [Third-party pi packages](#third-party-pi-packages)
 - `packages/` — their nix build
 - `modules/` — the flake ([dendritic
@@ -21,7 +25,56 @@ package, or as a plain git repo.
 
 pi owns everything mutable under `~/.pi/agent/` (`settings.json`,
 `auth.json`, sessions); every install method below only manages the
-read-only inputs above, via pi's auto-discovery locations.
+read-only inputs above, via pi's auto-discovery locations — except the
+pstack links, which only the `/pstack` toggle writes (see
+[pstack](#pstack)).
+
+## pstack
+
+`pstack/` vendors [poteto's pstack](https://github.com/cursor/plugins/tree/main/pstack)
+(147-line poteto-mode SKILL.md, 23 playbooks, 48 portable skills, 2
+subagent roles), ported to pi. Seeded from the
+[pi-mimir](https://github.com/casualjim/pi-mimir) port (MIT, credited in
+`pstack/LICENSE`), then reconciled to the current pi-herdr-agents 3.x API
+and stripped of omp branches. Delegation goes through
+[pi-herdr-agents](https://github.com/giuseppecrj/pi-herdr-agents)
+(`subagent` tool; the `poteto-agent` and `comment-sicko` roles are
+registered via its role-pack discovery event, so they only exist when
+pstack is on and pi-herdr-agents is installed). Running subagents under
+Herdr needs `HERDR_ENV=1`; everything else works without it.
+
+The tree is deliberately inert: it is in no pi discovery surface and in no
+`pi` manifest, and no install method links it into `~/.pi/agent/skills/` or
+`extensions/`. Every method only stages it at `~/.pi/agent/pstack-available`
+(a non-discovery location). The first-party `extensions/pstack-toggle`
+extension is the **sole** writer of the real links:
+
+- `/pstack` opens an overlay with a master on/off switch and an inventory
+  (skills linked, roles, extension, source). `/pstack on` and `/pstack off`
+  work non-interactively.
+- On: one symlink per skill under `~/.pi/agent/skills/` plus the pstack
+  extension under `~/.pi/agent/extensions/`, then reload. The extension
+  brings sticky Poteto Mode (session entry + `before_agent_start`
+  injection), the role pack, and the external-actions confirm guard
+  (disable via `$PI_CODING_AGENT_DIR/pstack/config.json`).
+- Off (the default): exactly those links are removed, then reload. With
+  them gone, nothing from pstack reaches an agent — no skill descriptions,
+  no mode injection (even for sessions that have the persisted entry), no
+  roles, no commands.
+- State: `$PI_CODING_AGENT_DIR/pstack/toggle.json`. Links point at the
+  staging location when it exists, so rebuilds swap the staging symlink and
+  the toggle's links keep resolving; a rebuild can never re-enable pstack.
+
+The vendor owns `unslop`, `bro`, `technical-writing`, and comment review
+(pstack's `comment-sicko` agent + `no-comments` skill): with pstack off
+there is no such behavior at all — that is the point of a single master
+switch. Only `show-me` remains an independent always-on skill here.
+
+Sync the vendor with upstream on demand ("sync pstack with upstream") via
+the `pstack-sync` skill: it diffs against the pinned commit in
+`pstack/UPSTREAM.json`, re-applies the port rules in `pstack/ADAPTATIONS.md`,
+and runs the contract test `node scripts/pstack-check.mjs` (also part of
+`nix flake check`).
 
 ## Install
 
@@ -91,5 +144,5 @@ does the same.
 ```console
 $ git add -A               # nix only sees git-tracked files
 $ nix fmt -- --ci          # canonical style (nixfmt)
-$ nix flake check          # includes building the third-party pi packages
+$ nix flake check          # third-party pi packages + the pstack contract test
 ```

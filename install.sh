@@ -55,4 +55,12 @@ if [ -d "$root/extensions" ]; then
   done
 fi
 
+# The vendored pstack tree stays inert: staged into a non-discovery location
+# only. The pstack-toggle extension (linked above like any first-party
+# extension) is the sole writer of the links under skills/ and extensions/
+# that make pstack reachable.
+if [ -d "$root/pstack" ]; then
+  link "$root/pstack" "$agent_dir/pstack-available"
+fi
+
 echo "pi agent setup installed into $agent_dir"
