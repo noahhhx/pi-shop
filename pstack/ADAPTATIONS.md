@@ -90,6 +90,14 @@ crosses project boundaries). Also applied in `scripts/worktree-audit.sh`.
 - `/cmd` → `/skill:cmd`.
 - `.cursor/skills/` → `.pi/skills/`; `~/.cursor/skills/` →
   `~/.pi/agent/skills/`.
+- Upstream dogfoods pstack inside cursor/plugins, so it names skills by repo
+  path (`pstack/skills/<name>/…`, often as `git show origin/main:pstack/…`
+  "read from trunk"). Here pstack is never in the repo an agent works in:
+  inside a skill's own prose use a skill-relative path (`scripts/…`,
+  `playbooks/…`); in text written out to other repos (plan templates) use
+  the installed path `~/.pi/agent/skills/<name>/…` and drop "from trunk".
+  `git show origin/main:` stays only for the project's own files (a control
+  skill path), which also keeps `check-plan.mjs`'s marker satisfied.
 - `AskQuestion` → plain "ask the user" prose.
 - Cursor built-ins become detect-installed-or-drop: `create-skill` → "the Pi
   Agent Skills standard", `deslop` → "a manual diff cleanup pass",
@@ -105,6 +113,13 @@ crosses project boundaries). Also applied in `scripts/worktree-audit.sh`.
 - Package `@cursor-skill/poteto-mode-tools` → `@pi-pstack/poteto-mode-tools`.
 - Upstream's `/loop` cadence markers become explicit pi watchers (a blocking
   `sleep 3600` whose completion wakes the tick).
+- `poteto-mode/scripts/bootstrap.ts`: when the scripts directory is not
+  writable (home-manager stages this tree in the nix store), it copies the
+  directory to `${XDG_CACHE_HOME:-~/.cache}/pstack/poteto-mode-tools/<key>`,
+  installs deps there, and re-executes the script from the copy. A sync that
+  takes upstream's bootstrap re-applies this.
+- Every file with a shebang keeps its executable bit (npm-pack seeding
+  dropped it; playbooks run `scripts/watch-pr/watch-pr` directly).
 
 ## omp branches — stripped (this port is pi-only)
 

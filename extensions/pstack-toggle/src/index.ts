@@ -40,9 +40,11 @@ function agentDir(): string {
 	return raw ? expandHome(raw) : path.join(homedir(), ".pi", "agent");
 }
 
-// <this repo>/extensions/pstack-toggle/src/index.ts → <this repo>
+// <this repo>/extensions/pstack-toggle/src/index.ts → <this repo>. pi loads
+// this module through the ~/.pi/agent/extensions/pstack-toggle symlink and
+// import.meta.url keeps that spelling, so resolve the real path first.
 function moduleRoot(): string {
-	return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+	return path.resolve(path.dirname(fs.realpathSync(fileURLToPath(import.meta.url))), "../../..");
 }
 
 function isPstackTree(root: string): boolean {

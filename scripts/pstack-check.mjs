@@ -17,8 +17,11 @@
 //   array, `chain` sequential mode, the eight-tasks/four-children limits
 // - no hardcoded model slugs (claude-opus, grok-4): model routing is
 //   config-driven via task:<category> / exact IDs / inherit-parent
-// - every playbooks/… and references/… path mentioned in a skill resolves
-//   inside that skill
+// - every playbooks/… and references/… path mentioned in a skill, and every
+//   scripts/… path inside an inline code span, resolves inside that skill
+// - no repo-relative path into the vendored tree (pstack/skills/…): it only
+//   resolves from a pi-shop checkout, never from the repo an agent works in
+// - every file with a shebang is executable
 // - agent files satisfy pi-herdr-agents' strict frontmatter: unquoted inline
 //   `tools:` scalar, bare true/false for spawning/auto-exit/persistent
 // - the vendored extension registers the role-pack discovery event and has
@@ -160,6 +163,7 @@ const literalRules = [
 	["four running child", "pi-herdr-agents 2.x child-process limit"],
 	["claude-opus", "hardcoded model slug"],
 	["grok-4", "hardcoded model slug"],
+	["pstack/skills/", "repo-relative path into the vendored tree; use a skill-relative path or ~/.pi/agent/skills/<name>/"],
 ];
 const subagentCallContext = /subagent|agent:/;
 
@@ -185,6 +189,8 @@ for (const file of files) {
 // --- Referenced paths resolve ----------------------------------------------
 
 const referencedPath = /(playbooks|references)\/[A-Za-z0-9][\w./-]*\.(?:md|ts|mjs|sh)(?!\w)/g;
+const codeSpan = /`([^`\n]+)`/g;
+const scriptPath = /(?:^|\s)(scripts\/[\w./-]*[\w-])/g;
 for (const file of files.filter((f) => f.endsWith(".md"))) {
 	const rel = relative(repoRoot, file);
 	let skillDir = dirname(file);
@@ -196,6 +202,19 @@ for (const file of files.filter((f) => f.endsWith(".md"))) {
 		if (!existsSync(join(skillDir, match[0])))
 			fail(rel, 0, `referenced path does not resolve: ${match[0]}`);
 	}
+	for (const span of content.matchAll(codeSpan)) {
+		for (const match of span[1].matchAll(scriptPath)) {
+			if (!existsSync(join(skillDir, match[1])))
+				fail(rel, 0, `referenced script does not resolve: ${match[1]}`);
+		}
+	}
+}
+
+// --- Shebang scripts are executable ----------------------------------------
+
+for (const file of [...walk(skillsDir), ...walk(agentsDir), ...walk(extensionDir)]) {
+	if (readFileSync(file, "utf8").startsWith("#!") && !(statSync(file).mode & 0o111))
+		fail(relative(repoRoot, file), 0, "has a shebang but is not executable");
 }
 
 // --- Vendored extension ----------------------------------------------------
