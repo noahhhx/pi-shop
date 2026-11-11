@@ -1,0 +1,12 @@
+{
+  "name": "herdr-status",
+  "version": "0.1.0",
+  "description": "Reports pi's run state to Herdr Core as OSC 7501 (Program Status Protocol).",
+  "private": true,
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  }
+}
