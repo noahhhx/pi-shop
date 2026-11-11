@@ -16,10 +16,11 @@ package, or as a plain git repo.
   see [pstack](#pstack)
 - `package.json` / `package-lock.json` — third-party pi packages (npm
   dependencies, currently
-  [pi-fff](https://github.com/dmtrKovalenko/fff/tree/main/packages/pi-fff) and
-  [pi-herdr-agents](https://github.com/giuseppecrj/pi-herdr-agents));
+  [pi-fff](https://github.com/dmtrKovalenko/fff/tree/main/packages/pi-fff),
+  [pi-herdr-agents](https://github.com/giuseppecrj/pi-herdr-agents), and
+  [pi-claude-cli](https://github.com/dmmulroy/pi-claude-cli));
   see [Third-party pi packages](#third-party-pi-packages)
-- `packages/` — their nix build
+- `packages/` — their nix build, and pi itself (`pi.nix`)
 - `modules/` — the flake ([dendritic
   pattern](https://github.com/vic/dendritic), like my NixOS config)
 
@@ -94,8 +95,11 @@ programs.pi-shop = {
 };
 ```
 
-Builds the third-party pi packages from `package-lock.json` and symlinks
-everything into `~/.pi/agent/` without touching `settings.json`.
+Installs pi (built from `packages/pi.nix`, ahead of nixpkgs) and Claude Code
+(from [nix-claude-code](https://github.com/ryoppippi/nix-claude-code), which
+pi-claude-cli drives), builds the third-party pi packages from
+`package-lock.json`, and symlinks everything into `~/.pi/agent/` without
+touching `settings.json`.
 
 ### Any nix, no home-manager
 
@@ -135,6 +139,7 @@ $ nix run .#add -- pi-web-access   # add (any npm spec, e.g. name@1.2.3)
 $ nix run .#update                 # bump everything to latest
 $ nix run .#update -- pi-web-access  # bump one
 $ nix run .#remove -- pi-web-access
+$ nix run .#add -- 'git+https://github.com/owner/repo.git#<commit>'  # git pin
 ```
 
 Each edits only `package.json` and `package-lock.json` (the `pi` manifest
@@ -143,6 +148,16 @@ review, build, commit. There are no nix hashes to update: nix fetches from
 the lockfile's integrity hashes, and home-manager links each manifest
 entry into `~/.pi/agent/`. Without nix, `node scripts/pkg.mjs add ...`
 does the same.
+
+A package that is not on the npm registry is pinned to a GitHub commit.
+`update` leaves git pins alone (their npm name can belong to an unrelated
+registry package); bump one by re-running `add` with the new commit.
+pi-claude-cli is one: its `@saccolabs/pi-claude-cli` name is the older
+upstream on npm.
+
+pi-claude-cli runs pi's model calls through the `claude` CLI on your Claude
+Pro/Max subscription. Log in once with `claude auth login`, then pick a
+`pi-claude-cli` model with `/model`.
 
 pi-herdr-agents runs subagents in legacy Herdr (`HERDR_ENV=1`) or, since
 3.9.0, as child terminals of a Herdr Core terminal (picked from
