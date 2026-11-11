@@ -59,7 +59,7 @@ export default function(pi: ExtensionAPI) {
     const sections: string[] = [];
     if (potetoMode)
       sections.push(
-        `Pstack Poteto Mode is enabled for this session. Follow its persisted workflow: track non-trivial work in the session's task tools, select and read the matching playbook, delegate through the subagent tool when delegation helps, verify real behavior, and name only principles that changed a decision. The full skill is at ${path.join(packageRoot(), "skills/poteto-mode/SKILL.md")}.`,
+        `Pstack Poteto Mode is enabled for this session. Follow its persisted workflow: track non-trivial work in the session's task tools, select and read the matching playbook, delegate bulk reads, implementation, and independent review to subagents by default instead of doing them inline, verify real behavior, and name only principles that changed a decision. The full skill is at ${path.join(packageRoot(), "skills/poteto-mode/SKILL.md")}. The subagent tools are deferred: when \`subagent\` is not in your tool list, call \`tool_search({ query: "subagent" })\` to load them before the first spawn; their absence does not mean delegation is unavailable.`,
       );
     if (!confirmExternalActions)
       sections.push(

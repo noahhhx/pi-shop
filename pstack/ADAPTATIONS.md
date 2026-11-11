@@ -111,6 +111,13 @@ forbidden:
   its own checkout based off that branch (see the backend rule below).
 - Results arrive as `subagent_result` messages; no skill sleeps, polls, or
   tails a child's session to wait for one.
+- The routine host tools (`subagent`, its lifecycle tools, `subagents_list`,
+  `worktree_*`) register with Pi's `deferred` exposure and stay out of the
+  model's tool list until `tool_search` loads them. Upstream's Cursor `Task`
+  tool is always declared, so without a nudge the model never delegates.
+  poteto-mode's Subagents section and the sticky-mode injection both say to
+  call `tool_search({ query: "subagent" })` before the first spawn; a sync
+  re-applies both.
 
 ## Herdr backend: legacy Herdr and Herdr Core
 
