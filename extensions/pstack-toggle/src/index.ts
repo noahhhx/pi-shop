@@ -346,9 +346,9 @@ async function run(enabled: boolean, ctx: ExtensionCommandContext): Promise<void
 }
 
 export default function pstackToggle(pi: ExtensionAPI): void {
-	pi.registerCommand("pstack", {
+	pi.registerCommand("toggle-pstack", {
 		description:
-			"Master switch for the vendored pstack stack: /pstack (overlay), /pstack on, /pstack off, /pstack status",
+			"Master switch for the vendored pstack stack: /toggle-pstack (overlay), /toggle-pstack on, /toggle-pstack off, /toggle-pstack status",
 		handler: async (args, ctx) => {
 			const arg = args.trim().toLowerCase();
 			if (arg === "on" || arg === "off") {

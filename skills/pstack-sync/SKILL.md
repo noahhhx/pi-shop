@@ -43,6 +43,6 @@ deltas, classify them, re-apply the adaptation layer, never blind-copy.
    sparse clone gives it).
 
 Never edit `~/.pi/agent/` during a sync; the vendored tree is staged by
-`install.sh` / home-manager, and the `/pstack` toggle extension decides what
+`install.sh` / home-manager, and the `pstack-toggle` extension decides what
 is linked. If the sync changes skill names (new or removed skills), the user
-must re-run `/pstack` (toggle off then on) to re-point the links.
+must re-run `/toggle-pstack` (toggle off then on) to re-point the links.

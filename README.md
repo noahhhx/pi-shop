@@ -26,7 +26,7 @@ package, or as a plain git repo.
 pi owns everything mutable under `~/.pi/agent/` (`settings.json`,
 `auth.json`, sessions); every install method below only manages the
 read-only inputs above, via pi's auto-discovery locations — except the
-pstack links, which only the `/pstack` toggle writes (see
+pstack links, which only the `/toggle-pstack` switch writes (see
 [pstack](#pstack)).
 
 ## pstack
@@ -49,9 +49,9 @@ The tree is deliberately inert: it is in no pi discovery surface and in no
 (a non-discovery location). The first-party `extensions/pstack-toggle`
 extension is the **sole** writer of the real links:
 
-- `/pstack` opens an overlay with a master on/off switch and an inventory
-  (skills linked, roles, extension, source). `/pstack on` and `/pstack off`
-  work non-interactively.
+- `/toggle-pstack` opens an overlay with a master on/off switch and an
+  inventory (skills linked, roles, extension, source). `/toggle-pstack on`
+  and `/toggle-pstack off` work non-interactively.
 - On: one symlink per skill under `~/.pi/agent/skills/` plus the pstack
   extension under `~/.pi/agent/extensions/`, then reload. The extension
   brings sticky Poteto Mode (session entry + `before_agent_start`
