@@ -139,6 +139,16 @@ the lockfile's integrity hashes, and home-manager links each manifest
 entry into `~/.pi/agent/`. Without nix, `node scripts/pkg.mjs add ...`
 does the same.
 
+pi-herdr-agents runs subagents in legacy Herdr (`HERDR_ENV=1`) or, since
+3.9.0, as child terminals of a Herdr Core terminal (picked from
+`HC_TERMINAL_ID`, as in the Herdr desktop app). Its Core backend
+launches children with a hard-coded `/bin/bash`, which NixOS lacks, so
+`packages/pi-packages.nix` substitutes bash's store path at build time.
+The substitution fails the build once upstream changes those lines.
+The first-party `extensions/herdr-status` reports pi's own state to Herdr
+Core (OSC 7501). Children load it from `~/.pi/agent/extensions/` like the
+parent, so they report their status too.
+
 ## Verify changes
 
 ```console
