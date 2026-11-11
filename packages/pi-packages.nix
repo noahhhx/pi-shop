@@ -14,9 +14,38 @@
   libgcc,
   jq,
   bash,
+  runCommand,
 }:
 let
   package = lib.importJSON ../package.json;
+  lock = lib.importJSON ../package-lock.json;
+
+  isGitPin = module: lib.hasPrefix "git+" (module.resolved or "");
+
+  # importNpmLock hands a git dependency (pinned by commit; see scripts/pkg.mjs)
+  # to npm as a store directory, which npm links instead of installing, so the
+  # dependency's own dependencies never reach node_modules. A tarball of the
+  # same commit installs like a registry package. Its bytes differ from the
+  # `npm pack` output the lockfile's integrity describes, so that is dropped;
+  # the commit already pins the content.
+  packageLock = lock // {
+    packages = lib.mapAttrs (
+      _: module: if isGitPin module then removeAttrs module [ "integrity" ] else module
+    ) lock.packages;
+  };
+  gitTarballs = lib.mapAttrs (
+    path: module:
+    let
+      pin = builtins.match "git\\+(https://[^#]+)#([0-9a-f]{40})" module.resolved;
+      src = builtins.fetchGit {
+        url = lib.elemAt pin 0;
+        rev = lib.elemAt pin 1;
+      };
+    in
+    runCommand "${baseNameOf path}.tgz" { } ''
+      tar --create --gzip --file=$out --directory=${src} --transform='s,^\.,package,' .
+    ''
+  ) (lib.filterAttrs (_: isGitPin) lock.packages);
 
   linkName =
     entry: lib.replaceStrings [ "@" "/" ] [ "" "-" ] (lib.removePrefix "node_modules/" entry);
@@ -31,10 +60,14 @@ let
   );
 in
 importNpmLock.buildNodeModules {
-  inherit package nodejs;
-  packageLock = lib.importJSON ../package-lock.json;
+  inherit package packageLock nodejs;
 
   derivationArgs = {
+    npmDeps = importNpmLock {
+      inherit package packageLock;
+      packageSourceOverrides = gitTarballs;
+    };
+
     # pi provides its core modules to extensions at runtime (see .npmrc).
     npmFlags = [ "--legacy-peer-deps" ];
 

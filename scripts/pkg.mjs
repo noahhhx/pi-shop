@@ -6,6 +6,7 @@
 // the lockfile. This keeps all of that in sync:
 //
 //   nix run .#add -- <npm-spec>...   # e.g. @ff-labs/pi-fff
+//   nix run .#add -- 'git+https://github.com/<owner>/<repo>.git#<commit>'
 //   nix run .#update [-- <name>...]  # every package when none given
 //   nix run .#remove -- <name>...
 //
@@ -26,12 +27,35 @@ if (!existsSync("package.json") || readJson("package.json").name !== "pi-shop") 
 // "@scope/name@1.2.3" -> "@scope/name"
 const nameOf = (spec) => spec.replace(/^(@?[^@]+).*$/, "$1");
 
+// A dependency pinned to a git commit (lockfile "resolved" is a git URL)
+// rather than a registry version. Its npm name can belong to an unrelated
+// registry package, so it is never looked up or bumped by name.
+const gitPin = (entry) => (entry.resolved?.startsWith("git+") ? entry.resolved : null);
+
+// The "pi" manifest of a git pin, read from its package.json at the pinned
+// commit. Only GitHub is supported.
+async function gitManifest(resolved) {
+  const m = resolved.match(/^git\+(?:https|ssh):\/\/(?:git@)?github\.com\/([^/]+)\/(.+?)(?:\.git)?#([0-9a-f]{40})$/);
+  if (!m) throw new Error(`unsupported git dependency: ${resolved}`);
+  const [, owner, repo, rev] = m;
+  const res = await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/${rev}/package.json`);
+  if (!res.ok) throw new Error(`${resolved}: package.json: HTTP ${res.status}`);
+  return (await res.json()).pi ?? null;
+}
+
 // The node_modules/ paths pi should load from an installed package: its own
 // "pi" manifest when it has one, otherwise pi's convention directories.
-function resources(name, version) {
+async function resources(name, entry) {
   const base = `node_modules/${name}`;
-  const view = npm(["view", `${name}@${version}`, "pi", "--json"]).trim();
-  const manifest = view ? JSON.parse(view) : null;
+  const pin = gitPin(entry);
+  let manifest;
+  if (pin) {
+    manifest = await gitManifest(pin);
+    if (!manifest) throw new Error(`${name}: git dependencies need a "pi" manifest`);
+  } else {
+    const view = npm(["view", `${name}@${entry.version}`, "pi", "--json"]).trim();
+    manifest = view ? JSON.parse(view) : null;
+  }
   const res = { extensions: [], skills: [] };
 
   if (manifest) {
@@ -44,7 +68,7 @@ function resources(name, version) {
       if (manifest[type]?.length) console.warn(`${name}: ${type} are not wired up by pi-shop yet`);
     }
   } else {
-    const [{ files }] = JSON.parse(npm(["pack", `${name}@${version}`, "--dry-run", "--json"]));
+    const [{ files }] = JSON.parse(npm(["pack", `${name}@${entry.version}`, "--dry-run", "--json"]));
     const paths = files.map((f) => f.path);
     if (paths.includes("index.ts") || paths.includes("index.js")) res.extensions.push(base);
     else if (paths.some((p) => p.startsWith("extensions/"))) res.extensions.push(`${base}/extensions`);
@@ -60,20 +84,27 @@ function resources(name, version) {
 // Rebuild the node_modules/ entries of the pi manifest and the
 // bundleDependencies list from the dependencies npm resolved; first-party
 // entries (extensions, skills) stay first and untouched.
-function sync() {
+async function sync() {
   const pkg = readJson("package.json");
   const lock = readJson("package-lock.json");
   const deps = Object.keys(pkg.dependencies ?? {}).sort();
+
+  // npm records GitHub pins as git+ssh, which nix (importNpmLock's fetchGit)
+  // can only fetch with SSH keys; https fetches the same commit anonymously.
+  for (const entry of Object.values(lock.packages)) {
+    entry.resolved &&= entry.resolved.replace(/^git\+ssh:\/\/git@github\.com\//, "git+https://github.com/");
+  }
+  writeFileSync("package-lock.json", `${JSON.stringify(lock, null, 2)}\n`);
 
   pkg.pi ??= {};
   for (const type of ["extensions", "skills"]) {
     pkg.pi[type] = (pkg.pi[type] ?? []).filter((e) => !e.startsWith("node_modules/"));
   }
   for (const name of deps) {
-    const { version } = lock.packages[`node_modules/${name}`];
-    const res = resources(name, version);
+    const entry = lock.packages[`node_modules/${name}`];
+    const res = await resources(name, entry);
     for (const type of ["extensions", "skills"]) pkg.pi[type].push(...res[type]);
-    console.log(`${name}@${version}: ${[...res.extensions, ...res.skills].join(", ") || "-"}`);
+    console.log(`${name}@${gitPin(entry) ?? entry.version}: ${[...res.extensions, ...res.skills].join(", ") || "-"}`);
   }
   if (deps.length) pkg.bundleDependencies = deps;
   else delete pkg.bundleDependencies;
@@ -92,7 +123,14 @@ switch (command) {
     npm(["install", ...lockOnly, ...args], inherit);
     break;
   case "update": {
-    const names = args.length ? args.map(nameOf) : Object.keys(readJson("package.json").dependencies ?? {});
+    const lock = readJson("package-lock.json");
+    const names = (args.length ? args.map(nameOf) : Object.keys(readJson("package.json").dependencies ?? {})).filter(
+      (n) => {
+        const pin = gitPin(lock.packages[`node_modules/${n}`] ?? {});
+        if (pin) console.warn(`${n}: pinned to ${pin}; bump it with add <git-url>#<commit>`);
+        return !pin;
+      },
+    );
     if (names.length) npm(["install", ...lockOnly, ...names.map((n) => `${n}@latest`)], inherit);
     // Also refresh transitive dependencies within their declared ranges.
     npm(["update", ...lockOnly, ...(args.length ? names : [])], inherit);
@@ -108,4 +146,4 @@ switch (command) {
     console.error("usage: pkg.mjs add <npm-spec>... | update [name...] | remove <name>... | sync");
     process.exit(1);
 }
-sync();
+await sync();
