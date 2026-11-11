@@ -169,6 +169,15 @@ The first-party `extensions/herdr-status` reports pi's own state to Herdr
 Core (OSC 7501). Children load it from `~/.pi/agent/extensions/` like the
 parent, so they report their status too.
 
+The first-party `extensions/claude-usage` shows your Claude plan limits,
+the same numbers as Claude Code's `/usage`. The footer reads
+`claude 5h 66% · wk 9%` and refreshes at session start and after each
+run, at most once a minute. `/usage` fetches fresh numbers and prints
+the session and weekly bars with their reset times. It reads Claude
+Code's OAuth token from `~/.claude/.credentials.json` (or
+`$CLAUDE_CONFIG_DIR`) and never writes it. Claude Code owns token
+refresh, so if the token has expired, run `claude` once.
+
 ## Verify changes
 
 ```console

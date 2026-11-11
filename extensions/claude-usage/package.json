@@ -1,0 +1,12 @@
+{
+  "name": "claude-usage",
+  "version": "0.1.0",
+  "description": "Shows Claude plan usage (session and weekly limits) in pi, as Claude Code's /usage does.",
+  "private": true,
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  }
+}
