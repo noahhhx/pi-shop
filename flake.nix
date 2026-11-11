@@ -10,6 +10,13 @@
     };
 
     import-tree.url = "github:denful/import-tree";
+
+    # Claude Code, which the pi-claude-cli provider drives; nixpkgs lags the
+    # release it needs.
+    nix-claude-code = {
+      url = "github:ryoppippi/nix-claude-code";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

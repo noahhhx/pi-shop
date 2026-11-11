@@ -1,8 +1,14 @@
-# The "pi-shop" aspect: pi's global read-only inputs — the portable
-# AGENTS.md base, skills, and extensions — symlinked into pi's
-# auto-discovery locations under ~/.pi/agent/. Everything pi treats as
-# mutable there (settings.json, auth.json, sessions) is left alone.
-{ config, lib, ... }:
+# The "pi-shop" aspect: pi itself, Claude Code (for the pi-claude-cli
+# provider), and pi's global read-only inputs — the portable AGENTS.md
+# base, skills, and extensions — symlinked into pi's auto-discovery
+# locations under ~/.pi/agent/. Everything pi treats as mutable there
+# (settings.json, auth.json, sessions) is left alone.
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 {
   flake.modules.homeManager.pi-shop =
     {
@@ -84,6 +90,11 @@
       };
 
       config = lib.mkIf cfg.enable {
+        home.packages = [
+          (pkgs.callPackage ../packages/pi.nix { })
+          inputs.nix-claude-code.packages.${pkgs.stdenv.hostPlatform.system}.default
+        ];
+
         home.file = {
           ".pi/agent/AGENTS.md".source = agentsMd;
         }

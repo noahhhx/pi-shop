@@ -24,6 +24,8 @@
     in
     {
       packages = {
+        pi = pkgs.callPackage ../packages/pi.nix { };
+
         # The third-party pi packages; they reach ~/.pi/agent via
         # home-manager (modules/pi-shop.nix), this is for building/testing.
         pi-packages = pkgs.callPackage ../packages/pi-packages.nix { };
@@ -32,7 +34,7 @@
       };
 
       # `nix flake check` builds the packages, catching broken bumps.
-      checks = { inherit (config.packages) pi-packages; };
+      checks = { inherit (config.packages) pi pi-packages; };
 
       apps = {
         # Symlink the content into ~/.pi/agent without home-manager.
