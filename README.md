@@ -12,7 +12,7 @@ package, or as a plain git repo.
   machine-specific skills stay in the consuming repo)
 - `extensions/` — first-party extensions (`.ts` files or package dirs)
 - `pstack/` — the vendored [pstack](https://github.com/cursor/plugins/tree/main/pstack)
-  stack (poteto-mode + 48 skills + 2 agent roles), inert until toggled on;
+  stack (poteto-mode + 53 skills + 2 agent roles), inert until toggled on;
   see [pstack](#pstack)
 - `package.json` / `package-lock.json` — third-party pi packages (npm
   dependencies, currently
@@ -32,16 +32,21 @@ pstack links, which only the `/toggle-pstack` switch writes (see
 ## pstack
 
 `pstack/` vendors [poteto's pstack](https://github.com/cursor/plugins/tree/main/pstack)
-(147-line poteto-mode SKILL.md, 23 playbooks, 48 portable skills, 2
+(152-line poteto-mode SKILL.md, 23 playbooks, 53 portable skills, 2
 subagent roles), ported to pi. Seeded from the
 [pi-mimir](https://github.com/casualjim/pi-mimir) port (MIT, credited in
-`pstack/LICENSE`), then reconciled to the current pi-herdr-agents 3.x API
+`pstack/LICENSE`), then reconciled to the pi-herdr-agents 3.9 API
 and stripped of omp branches. Delegation goes through
 [pi-herdr-agents](https://github.com/giuseppecrj/pi-herdr-agents)
 (`subagent` tool; the `poteto-agent` and `comment-sicko` roles are
 registered via its role-pack discovery event, so they only exist when
-pstack is on and pi-herdr-agents is installed). Running subagents under
-Herdr needs `HERDR_ENV=1`; everything else works without it.
+pstack is on and pi-herdr-agents is installed). Subagents need a Herdr
+backend. In the Herdr desktop app (a Herdr Core client), pi-herdr-agents
+selects Core from the terminal's `HC_TERMINAL_ID`, with no extra setup;
+under the legacy `herdr` TUI it needs `HERDR_ENV=1`. Core has no managed
+worktrees, so on Core pstack's parallel writers work in a checkout the
+parent creates and passes as `cwd` (see `pstack/ADAPTATIONS.md`).
+Everything else works without Herdr.
 
 The tree is deliberately inert: it is in no pi discovery surface and in no
 `pi` manifest, and no install method links it into `~/.pi/agent/skills/` or
