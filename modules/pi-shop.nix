@@ -61,6 +61,11 @@
       # make it reachable; a rebuild only re-points this staging link.
       pstackStaging = lib.optionalAttrs (builtins.pathExists ../pstack) {
         ".pi/agent/pstack-available".source = ../pstack;
+      }
+      # pstack's config (poteto-mode subagent models); toggle.json beside it
+      # stays mutable, so only the file is linked.
+      // lib.optionalAttrs (builtins.pathExists ../pstack-config.json) {
+        ".pi/agent/pstack/config.json".source = ../pstack-config.json;
       };
 
       # The portable base from this repo, with the consumer's optional

@@ -13,6 +13,7 @@
         ${lib.optionalString (builtins.pathExists ../skills) "cp -r ${../skills} $out/skills"}
         ${lib.optionalString (builtins.pathExists ../extensions) "cp -r ${../extensions} $out/extensions"}
         ${lib.optionalString (builtins.pathExists ../pstack) "cp -rL ${../pstack} $out/pstack"}
+        ${lib.optionalString (builtins.pathExists ../pstack-config.json) "cp ${../pstack-config.json} $out/pstack-config.json"}
       '';
 
       # Apps take a plain outPath string (not the package value) so

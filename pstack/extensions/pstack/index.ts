@@ -3,7 +3,8 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { registerPstackRoles } from "./roles.js";
-import { confirmExternalActionsEnabled, resolvePstackConfigFile } from "./config.js";
+import { confirmExternalActionsEnabled, loadPotetoModels, resolvePstackConfigFile } from "./config.js";
+import { describeRouting, routeSubagentModel } from "./model-routing.js";
 
 const MODE_ENTRY = "pstack-mode";
 
@@ -27,9 +28,9 @@ function knownExternalWrite(command: string): string | undefined {
 
 export default function(pi: ExtensionAPI) {
   registerPstackRoles(pi);
-  const confirmExternalActions = confirmExternalActionsEnabled(
-    resolvePstackConfigFile(),
-  );
+  const configFile = resolvePstackConfigFile();
+  const confirmExternalActions = confirmExternalActionsEnabled(configFile);
+  const potetoModels = loadPotetoModels(configFile);
 
   let potetoMode = false;
 
@@ -61,6 +62,10 @@ export default function(pi: ExtensionAPI) {
       sections.push(
         `Pstack Poteto Mode is enabled for this session. Follow its persisted workflow: track non-trivial work in the session's task tools, select and read the matching playbook, delegate bulk reads, implementation, and independent review to subagents by default instead of doing them inline, verify real behavior, and name only principles that changed a decision. The full skill is at ${path.join(packageRoot(), "skills/poteto-mode/SKILL.md")}. The subagent tools are deferred: when \`subagent\` is not in your tool list, call \`tool_search({ query: "subagent" })\` to load them before the first spawn; their absence does not mean delegation is unavailable.`,
       );
+    if (potetoMode && potetoModels)
+      sections.push(
+        `Poteto Mode subagent models are pinned by the pstack config, overriding the task-category shortlists: ${describeRouting(potetoModels)}. Keep using \`model: task:<category>\` as the skills say; it resolves to these. Other providers are refused, so a workflow that wants a second model family (an arena judge, cross-family review) runs without it and says so.`,
+      );
     if (!confirmExternalActions)
       sections.push(
         "The pstack external-action confirmation guard is disabled by config. Run recognized external commands (pushes, pull-request updates, merges, deployments) without asking. Still pause for irreversible writes: force-pushes to shared branches, deployments, data deletion, and customer messages.",
@@ -68,6 +73,15 @@ export default function(pi: ExtensionAPI) {
     if (sections.length === 0) return;
     return { systemPrompt: `${event.systemPrompt}\n\n${sections.join("\n\n")}` };
   });
+
+  if (potetoModels)
+    pi.on("tool_call", (event) => {
+      if (!potetoMode || event.toolName !== "subagent") return;
+      const input = event.input as { model?: unknown };
+      const route = routeSubagentModel(input.model, potetoModels);
+      if (route.action === "set") input.model = route.model;
+      if (route.action === "block") return { block: true, reason: route.reason };
+    });
 
   if (confirmExternalActions)
     pi.on("tool_call", async (event, ctx) => {

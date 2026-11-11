@@ -118,6 +118,15 @@ forbidden:
   poteto-mode's Subagents section and the sticky-mode injection both say to
   call `tool_search({ query: "subagent" })` before the first spawn; a sync
   re-applies both.
+- Poteto-mode subagent models can be pinned apart from the global herdr
+  task categories. The pstack extension reads `potetoModels` from
+  `~/.pi/agent/pstack/config.json` (category → exact ID, plus `default` for
+  spawns without a model). While poteto mode is on, a `tool_call` hook
+  rewrites each `subagent` call's `task:<category>` or omitted `model` to the
+  configured ID and blocks exact IDs from any other provider. Skills keep
+  saying `task:<category>`, so no model slug enters the vendored tree. With
+  no `potetoModels`, routing is upstream's. pi-shop ships the file as
+  `pstack-config.json` at the repo root.
 
 ## Herdr backend: legacy Herdr and Herdr Core
 

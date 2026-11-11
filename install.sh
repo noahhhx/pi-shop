@@ -63,4 +63,10 @@ if [ -d "$root/pstack" ]; then
   link "$root/pstack" "$agent_dir/pstack-available"
 fi
 
+# pstack's config (poteto-mode subagent models). Only the file: toggle.json
+# beside it is pstack-toggle's mutable state.
+if [ -f "$root/pstack-config.json" ]; then
+  link "$root/pstack-config.json" "$agent_dir/pstack/config.json"
+fi
+
 echo "pi agent setup installed into $agent_dir"

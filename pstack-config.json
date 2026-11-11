@@ -1,0 +1,11 @@
+{
+  "potetoModels": {
+    "default": "pi-claude-cli/claude-opus-5-5",
+    "recon": "pi-claude-cli/claude-haiku-5-5",
+    "coding": "pi-claude-cli/claude-sonnet-5-5",
+    "qa": "pi-claude-cli/claude-sonnet-5-5",
+    "docs": "pi-claude-cli/claude-sonnet-5-5",
+    "review": "pi-claude-cli/claude-opus-5-5",
+    "architecture": "pi-claude-cli/claude-fable-5-2"
+  }
+}
