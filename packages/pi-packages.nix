@@ -89,6 +89,16 @@ importNpmLock.buildNodeModules {
       substituteInPlace "$out/node_modules/pi-herdr-agents/maestro/surfaces/herdr/herdr-core-surface-provider.ts" \
         --replace-fail '["/bin/bash", ' '["${lib.getExe bash}", '
 
+      # Opening a running subagent in a Herdr app pane turns on core keep, and
+      # getOwned reads keep as "ownership changed": every later inspection is
+      # "unavailable", so a finished child's result is never delivered and the
+      # parent waits forever. Keep is a user-toggled flag, not identity, which
+      # created_ms, cwd, argv and parent already pin. Only getOwned's check is
+      # dropped; the launch-time one stays.
+      substituteInPlace "$out/node_modules/pi-herdr-agents/maestro/surfaces/herdr/herdr-core-surface-provider.ts" \
+        --replace-fail ${lib.escapeShellArg "terminal.keep ||\n\t\t\tterminal.rm ||\n\t\t\t(expected &&"} \
+          ${lib.escapeShellArg "terminal.rm ||\n\t\t\t(expected &&"}
+
       ${lib.concatMapStrings (entry: ''
         [ -e "$out/${entry}" ] || { echo "missing: ${entry}" >&2; exit 1; }
       '') (lib.attrValues links.skills)}
