@@ -13,6 +13,7 @@
   autoPatchelfHook,
   libgcc,
   jq,
+  bash,
 }:
 let
   package = lib.importJSON ../package.json;
@@ -48,6 +49,13 @@ importNpmLock.buildNodeModules {
     # isn't loadable from ~/.pi/agent/extensions, which (unlike a pi package
     # root) only looks for a package.json "pi" manifest or an index.ts/js.
     postInstall = ''
+      # pi-herdr-agents' Herdr Core backend launches children as
+      # ["/bin/bash", script], which NixOS lacks: every Core subagent launch
+      # dies with "cannot start /bin/bash". --replace-fail breaks the build
+      # once an upstream release changes those lines, so a bump revisits it.
+      substituteInPlace "$out/node_modules/pi-herdr-agents/maestro/surfaces/herdr/herdr-core-surface-provider.ts" \
+        --replace-fail '["/bin/bash", ' '["${lib.getExe bash}", '
+
       ${lib.concatMapStrings (entry: ''
         [ -e "$out/${entry}" ] || { echo "missing: ${entry}" >&2; exit 1; }
       '') (lib.attrValues links.skills)}
