@@ -26,7 +26,10 @@
 //   resolves from a pi-shop checkout, never from the repo an agent works in
 // - every file with a shebang is executable
 // - agent files satisfy pi-herdr-agents' strict frontmatter: unquoted inline
-//   `tools:` scalar, bare true/false for spawning/auto-exit/persistent
+//   `tools:`/`deny-tools:` scalars, bare true/false for spawning, self-spawn,
+//   auto-exit, interactive, and persistent, each declared once
+// - a skill line that passes `worktree` to a spawn also names the `cwd` form,
+//   because Herdr Core refuses managed worktrees
 // - the vendored extension registers the role-pack discovery event and has
 //   an index.ts entry
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
@@ -114,7 +117,7 @@ for (const dir of skillDirs) {
 // --- Agent frontmatter (pi-herdr-agents strict format) ---------------------
 
 const scalarFields = ["tools", "deny-tools"];
-const booleanFields = ["spawning", "auto-exit", "persistent"];
+const booleanFields = ["spawning", "self-spawn", "auto-exit", "interactive", "persistent"];
 for (const file of walk(agentsDir).filter((f) => f.endsWith(".md"))) {
 	const content = readFileSync(file, "utf8");
 	const match = content.match(/^---\n([\s\S]*?)\n---/);
@@ -129,6 +132,8 @@ for (const file of walk(agentsDir).filter((f) => f.endsWith(".md"))) {
 		const decl = lines.find((line) => line.startsWith(`${field}:`));
 		if (!decl) continue;
 		const value = decl.slice(field.length + 1).trim();
+		if (lines.some((line) => line.trimStart().startsWith(`${field}:`) && line !== decl))
+			fail(relative(repoRoot, file), 0, `${field} declared more than once or not at line start`);
 		if (booleanFields.includes(field)) {
 			if (value !== "true" && value !== "false")
 				fail(relative(repoRoot, file), 0, `${field} must be bare true or false`);
@@ -146,8 +151,6 @@ for (const file of walk(agentsDir).filter((f) => f.endsWith(".md"))) {
 			value.split(",").some((entry) => !entry.trim())
 		)
 			fail(relative(repoRoot, file), 0, `${field} must be an unquoted comma-separated scalar`);
-		if (lines.some((line) => line.trimStart().startsWith(`${field}:`) && line !== decl))
-			fail(relative(repoRoot, file), 0, `${field} declared more than once or not at line start`);
 	}
 }
 
@@ -201,6 +204,8 @@ for (const file of files) {
 				fail(rel, lineNo, "role: as a subagent argument; route models with model: task:<category> or exact IDs");
 			if (/\benvironment:/.test(line)) fail(rel, lineNo, "environment: as a subagent argument; workers run locally");
 		}
+		if (file.endsWith(".md") && /`worktree`/.test(line) && /\b(subagent|spawn|pass)/i.test(line) && !/`cwd`/.test(line))
+			fail(rel, lineNo, "`worktree` launch without the Herdr Core form; Core refuses managed worktrees, so also name the self-made checkout passed as `cwd`");
 		if (/\bchain sequential\b|sequential `chain`/.test(line))
 			fail(rel, lineNo, "pi-herdr-agents 2.x chain mode");
 	});

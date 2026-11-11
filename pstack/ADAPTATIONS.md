@@ -39,7 +39,18 @@ invokes `/skill:<name>`). Keep it; do not "fix" it away.
 - `name` is kebab-case and matches the skill's directory name.
 - Agent files keep pi-herdr-agents' strict frontmatter: unquoted inline
   `tools: read, grep, find, ls, bash`, `spawning:`/`auto-exit:` as bare
-  `true`/`false`, `system-prompt: append`. No YAML lists, no quotes.
+  `true`/`false`, `system-prompt: append`. No YAML lists, no quotes. The same
+  holds for 3.9's `deny-tools`, `self-spawn`, `interactive`, and
+  `persistent`.
+- `poteto-agent` sets `spawning: true` and `self-spawn: true`. 3.x blocks a
+  role from launching itself unless it opts in, and pstack's routed skills
+  (swarm, how, why, reflect, interrogate) spawn `poteto-agent` workers, so
+  without the opt-in an autopilot owner or orchestrate sub-coordinator could
+  not run them. The host's `spawning.maxDepth` bounds the recursion.
+  `comment-sicko` stays a leaf (`spawning: false`).
+- The role pack registers `agents/` through the
+  `pi-herdr-subagents:roles:discover:v1` event (unchanged in 3.9) and
+  unsubscribes on `session_shutdown`.
 
 ## Model routing — config-driven, model-agnostic
 
@@ -75,10 +86,16 @@ rules drop. A cross-family judge (arena Phase C) keeps its rule: when
 `task:review` resolves to the parent's family, pass an exact ID from
 another family, or skip the judge and say so.
 
-## Subagent call shape (pi-herdr-agents 3.x)
+## Subagent call shape (pi-herdr-agents 3.9)
 
 The only `subagent` parameters are `name, task, agent, systemPrompt, model,
-thinking, skills, tools, cwd, worktree, fork, persistent, interactive`.
+thinking, skills, tools, cwd, worktree, fork, persistent, interactive,
+accept`. `model` also takes an ordered comma-separated fallback list (not
+with `worktree`). `accept` (`{ run, maxRetries?, timeoutSec?, paths? }`, a
+shell check the child and then the parent run) is allowed wherever a brief
+already names a pass/fail command; no skill requires it. Lifecycle tools are
+`subagent_interrupt`, `subagent_cancel` (ordinary children), `subagent_stop`
+and `subagent_send` (persistent specialists), and `subagent_resume`.
 Upstream's Cursor `Task` tool and pi-herdr-agents 2.x idioms are both
 forbidden:
 
@@ -90,8 +107,52 @@ forbidden:
   tool has no readonly flag.
 - Workers run locally with isolated context: briefs inline or point at repo
   paths; never assume cloud execution, cloud base branches, or a sandbox.
-- A worker starting from a non-default branch gets it named in its brief or a
-  `worktree` based off that branch.
+- A worker starting from a non-default branch gets it named in its brief or
+  its own checkout based off that branch (see the backend rule below).
+- Results arrive as `subagent_result` messages; no skill sleeps, polls, or
+  tails a child's session to wait for one.
+
+## Herdr backend: legacy Herdr and Herdr Core
+
+pi-herdr-agents 3.9 runs children on one of two backends, chosen at Pi
+startup (`herdr.backend: "auto"`): Herdr Core when the Pi process runs in
+a Core terminal (`HC_TERMINAL_ID` set, as in the Herdr desktop app, which
+is a Core client), otherwise the legacy `herdr` CLI, which needs
+`HERDR_ENV=1`. Core runs fresh, fork, resumed, interactive, and persistent
+children, with automatic delivery, interrupt, and cancel. It refuses
+managed worktrees (`worktree:` launches, `/worktree`, `worktree_list`,
+`worktree_remove`), remote terminals, Desktop Agents grouping, and the
+legacy sidebar plugin. An ordinary child's `cwd` may point at any existing
+checkout.
+
+Upstream's "give each parallel writer its own worktree" therefore has two
+forms, stated once in poteto-mode's Subagents section and referenced from
+elsewhere:
+
+- Legacy Herdr: pass `worktree: { branch, base }`; the host creates,
+  reports, and inventories the checkout.
+- Herdr Core: create the checkout yourself (`git worktree add -b <branch>
+  <path> <base>` outside the source checkout), pass its path as `cwd`, omit
+  `worktree`, and remove it with `git worktree remove` after integration.
+  Such a child is an ordinary child, so `subagent_resume` and model
+  fallback lists work on it, and the host's worktree inventory never sees it.
+
+Any skill line that tells a spawn to pass `worktree` must also name the
+`cwd` form; `scripts/pstack-check.mjs` enforces this.
+
+**`hc --skill` and pstack delegation.** Herdr Core ships its own agent skill
+that tells agents to prefer `hc` over their own sub-agent tool. pstack keeps
+the `subagent` tool as its only delegation path, and poteto-mode says so.
+On Core, pi-herdr-agents already runs each child as a native Core terminal,
+so `subagent` is the `hc` path, plus result delivery, `task:<category>`
+routing, role frontmatter, fallback, and cancel-before-fallback that raw
+`hc` lacks. Raw `hc` stays for terminal work that is not a Pi child.
+
+**Delegation depth.** The host refuses launches past `spawning.maxDepth`
+(default 3: parent 0, child 1, grandchild 2, great-grandchild 3).
+Orchestrate's "you, sub-coordinators, workers" uses depths 0 to 2, so a
+worker can still run one level of its own fan-out (a swarm) at depth 3,
+and that level cannot spawn.
 
 ## Transcripts
 

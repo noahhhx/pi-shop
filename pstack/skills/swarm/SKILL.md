@@ -26,7 +26,7 @@ Open a todolist with one entry per phase before launching anything.
 
 Spawn all N workers as N parallel `subagent` calls in one message, each with the step 3 model. Use `agent: "poteto-agent"` unless a workflow names another agent. Pi child processes run locally with isolated context, so give each brief explicit file pointers and prevent concurrent writes to shared paths.
 
-When a worker must start from a non-default pushed branch, name the branch in its brief, or spawn it in an isolated worktree with `worktree` based off that branch.
+When a worker must start from a non-default pushed branch, name the branch in its brief, or give it its own checkout based off that branch: `worktree` under legacy Herdr, or a worktree you create and pass as `cwd` under Herdr Core, per the Subagents section of the **poteto-mode** skill.
 
 Every brief stands alone. Include the goal, scope, exact slice or race arm, how to verify, and what to report. Reports use `PASS`, `ISSUES`, or `BLOCKED` with evidence.
 

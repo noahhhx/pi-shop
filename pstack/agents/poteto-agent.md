@@ -3,6 +3,7 @@ name: poteto-agent
 description: pstack delegate for code-writing and helper tasks spawned during a /skill:poteto-mode run, never the runner of /skill:poteto-mode itself. Spawn a fresh `poteto-agent` for each new task, and resume one only in the strict cases poteto-mode's Subagents section names. Reads the bundled Pi poteto-mode skill in full before any work, including its Principles index.
 system-prompt: append
 spawning: true
+self-spawn: true
 auto-exit: true
 ---
 
