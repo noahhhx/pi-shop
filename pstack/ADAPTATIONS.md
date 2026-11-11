@@ -61,7 +61,19 @@ Upstream's bespoke per-workflow pools (why-investigators, swarm-workers,
 interrogate reviewers, arena-runners, how-explainer, …) map to the fixed
 categories: implementation workers → `task:coding`, reviewers/judges/
 synthesizers → `task:review`, scouts/investigators/explorers → `task:recon`,
-planning and diagnosis → `task:architecture`, prose output → `task:docs`.
+verification lanes → `task:qa`, planning and diagnosis →
+`task:architecture`, prose output → `task:docs`. The same goes for every
+"`<role>` line in `pstack-models.mdc` (default `<slug>`)" sentence and each
+playbook's "your configured `<playbook>` model": they become the matching
+category.
+
+Upstream's "pick each subagent's reasoning level and fast or standard
+speed" becomes "pick each subagent's `thinking` level" (the `subagent`
+tool's `thinking` parameter, `off` through `max`). Pi has no fast-speed
+model variant, so the speed half and the "use fast mode only when urgent"
+rules drop. A cross-family judge (arena Phase C) keeps its rule: when
+`task:review` resolves to the parent's family, pass an exact ID from
+another family, or skip the judge and say so.
 
 ## Subagent call shape (pi-herdr-agents 3.x)
 
@@ -102,6 +114,24 @@ crosses project boundaries). Also applied in `scripts/worktree-audit.sh`.
   `git show origin/main:` stays only for the project's own files (a control
   skill path), which also keeps `check-plan.mjs`'s marker satisfied.
 - `AskQuestion` → plain "ask the user" prose.
+- Cursor cloud agents (autopilot owners, shipping verifiers, orchestrate
+  workers on "a new cloud VM") → Pi subagents running locally. The Cursor
+  Project tracker and store, and "the root agent's store (path in the system
+  prompt)", → an uncommitted `notes.md` / `decisions.tsv` trail at a path the
+  root's brief names, with spawned children recorded in a `children.tsv`
+  beside it. "Fork a worker for its built state" → `subagent_resume` for an
+  exited ordinary child, `subagent_send` for a persistent specialist.
+- Inline media in the reply (ketchup's embedded screenshots and videos) →
+  give each file by path or link; `/visualize` charts → "a chart from
+  available tooling".
+- `reflect`'s "never edit a skill under `plugins/cache/`" → never edit a
+  skill in place inside a staged package tree (the pstack tree that
+  `~/.pi/agent/skills/` links into); copy it to the project's `.pi/skills/`.
+- Disclaimers that only disambiguate a Cursor built-in ("not Cursor's
+  built-in babysit skill") are dropped.
+- `statechart` keeps upstream's mise bootstrap and documents the script's
+  own `TLA2TOOLS` / `JAVA` escape for hosts where mise's Java cannot run
+  (NixOS).
 - Cursor built-ins become detect-installed-or-drop: `create-skill` → "the Pi
   Agent Skills standard", `deslop` → "a manual diff cleanup pass",
   `control-cli`/`control-ui` → "available project UI or CLI verification
@@ -113,7 +143,8 @@ crosses project boundaries). Also applied in `scripts/worktree-audit.sh`.
 - `CURSOR_AUTOMATION_ID` → `PSTACK_AUTOMATION_ID`.
 - Automation-comment author match `author === "cursor"` →
   `author.includes("automation")`.
-- Package `@cursor-skill/poteto-mode-tools` → `@pi-pstack/poteto-mode-tools`.
+- Package scope `@cursor-skill/*` → `@pi-pstack/*` (`poteto-mode-tools`,
+  `statechart`), including the lockfile's workspace name.
 - Upstream's `/loop` cadence markers become explicit pi watchers (a blocking
   `sleep 3600` whose completion wakes the tick).
 - `poteto-mode/scripts/bootstrap.ts`: when the scripts directory is not

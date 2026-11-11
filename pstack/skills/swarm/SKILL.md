@@ -1,6 +1,6 @@
 ---
 name: swarm
-description: "Fan out N parallel workers, drain them, and return one report. Use for /swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration."
+description: "Fan out N parallel workers, drain them, and return one report. Use for /skill:swarm, 'swarm this', or parallel coverage, races, gauntlets, and exploration."
 disable-model-invocation: true
 ---
 
@@ -19,12 +19,12 @@ Open a todolist with one entry per phase before launching anything.
 
 1. State the done predicate and the artifact or report the swarm must return.
 2. Choose the shape. Partition into slices, race N workers on identical briefs, or mix both. For a race or mixed shape, declare `first pass`, `rank all`, or `best-of` before spawning.
-3. Pick the worker model from the `swarm workers` line in `~/.cursor/rules/pstack-models.mdc`. If the rule or that line is missing, use `grok-4.7-xhigh-fast`. For `auto` or `inherit-parent`, omit `model` so the workers run on the parent model. If the Task tool rejects a slug, use the default and say so. If it rejects the default, use the closest valid slug of the same family from its error message. For a model race, name each arm's model up front. Pick each subagent's reasoning level and fast or standard speed for the job, per the Subagents section of the **poteto-mode** skill.
+3. Pick each worker's model with `model: task:<category>` matched to the brief (`task:coding` for implementation slices, `task:recon` for exploration, `task:qa` for verification) or an exact model ID; omitting inherits the parent model. If an exact ID fails to resolve, use the category and say so. For a model race, name each arm's model up front. Pick each subagent's `thinking` level for the job, per the Subagents section of the **poteto-mode** skill.
 4. Give each worker its own writable output when it writes. When workers verify or measure commits, each brief names the exact SHAs. A measurement brief also names the method (sample count, what one sample is, order). The worker records both in its result.
 
 ## Phase B: Fan out
 
-Spawn all N workers in one message with `subagent_type: generalPurpose`, `environment: "cloud"`, `run_in_background: true`, and the step 3 model, left unset for `auto` or `inherit-parent`. Use `environment: "local"` only when the worker needs access to something on the user's computer.
+Spawn all N workers as N parallel `subagent` calls in one message, each with the step 3 model. Use `agent: "poteto-agent"` unless a workflow names another agent. Pi child processes run locally with isolated context, so give each brief explicit file pointers and prevent concurrent writes to shared paths.
 
 When a worker must start from a non-default pushed branch, name the branch in its brief, or spawn it in an isolated worktree with `worktree` based off that branch.
 

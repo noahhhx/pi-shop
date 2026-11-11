@@ -1,6 +1,6 @@
 ---
 name: statechart
-description: "Check a TLA+ model of a system that moves between states, such as a product flow, a protocol, or a service, and draw it as a Mermaid statechart. The report gives the shortest path to each state that breaks a rule. Use for /statechart, or to show a bug as a path through states."
+description: "Check a TLA+ model of a system that moves between states, such as a product flow, a protocol, or a service, and draw it as a Mermaid statechart. The report gives the shortest path to each state that breaks a rule. Use for /skill:statechart, or to show a bug as a path through states."
 disable-model-invocation: true
 ---
 
@@ -18,7 +18,7 @@ Work in a scratch folder outside the repo. Write a TLA+ spec and its config. The
 
 `scripts/statechart.ts` is TypeScript, so run it with a runtime that can execute TypeScript.
 
-The first run installs TLC and Java with mise and needs the network.
+The first run installs TLC and Java with mise and needs the network. Where mise is missing or its Java cannot run (NixOS), set `TLA2TOOLS` to the path of `tla2tools.jar` and `JAVA` to a Java 11 or later binary, and the command skips mise.
 
 ## Write the spec
 

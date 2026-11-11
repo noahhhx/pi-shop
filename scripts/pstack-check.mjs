@@ -10,7 +10,10 @@
 //   `name` equals the directory name (kebab-case), and it keeps
 //   `disable-model-invocation: true` (pstack is mode-driven)
 // - no Cursor-only surface survives: cursor-team-kit, .cursor paths,
-//   setup-pstack, make-bot-ui, AskQuestion
+//   setup-pstack, make-bot-ui, AskQuestion, the Task tool and its arguments
+//   (subagent_type, generalPurpose, run_in_background, readonly:), the
+//   pstack-models role rule, model speed, the @cursor-skill package scope,
+//   and bare /<skill> commands (pi invokes /skill:<name>)
 // - no omp branches (pi-only port): /loop anywhere, the word "omp"
 // - no pi-herdr-agents 2.x API: `role:` or `environment:` as subagent-call
 //   arguments (lines that mention subagent or agent:), a backticked `tasks`
@@ -156,7 +159,6 @@ const literalRules = [
 	["setup-pstack", "excluded upstream skill"],
 	["make-bot-ui", "excluded upstream skill"],
 	["AskQuestion", "Cursor idiom; use ask-the-user prose"],
-	["/loop", "omp /loop; use an explicit pi watcher"],
 	["`tasks` array", "pi-herdr-agents 2.x tasks array; use N parallel subagent calls"],
 	["`chain`", "pi-herdr-agents 2.x chain mode"],
 	["eight tasks", "pi-herdr-agents 2.x parallel limit"],
@@ -164,7 +166,20 @@ const literalRules = [
 	["claude-opus", "hardcoded model slug"],
 	["grok-4", "hardcoded model slug"],
 	["pstack/skills/", "repo-relative path into the vendored tree; use a skill-relative path or ~/.pi/agent/skills/<name>/"],
+	["run_in_background", "Cursor Task argument; pi subagent results arrive on their own"],
+	["subagent_type", "Cursor Task argument; use the subagent tool's agent: parameter"],
+	["generalPurpose", "Cursor Task agent; use agent: \"poteto-agent\" or a bare subagent"],
+	["pstack-models", "Cursor model-role rule; route models with task:<category> or exact IDs"],
+	["fast or standard speed", "Cursor model speed; pick a thinking level instead"],
+	["@cursor-skill/", "Cursor package scope; use @pi-pstack/"],
 ];
+const regexRules = [
+	[/(^|[\s`("'])\/loop\b(?!-)/, "omp /loop; use an explicit pi watcher"],
+	[/`Task`|\bTask (tool|calls?|subagents?|prompts?|errors?)\b/, "Cursor Task tool; use the subagent tool"],
+	[/\breadonly: (true|false)\b/, "Cursor readonly flag; pi-herdr-agents has none, state read-only posture in prose"],
+];
+const skillNames = skillDirs.map((dir) => dir.split("/").pop());
+const bareSlashCommand = new RegExp(`(?<![\\w.:/~-])/(${skillNames.join("|")})(?![\\w/-])`);
 const subagentCallContext = /subagent|agent:/;
 
 for (const file of files) {
@@ -175,6 +190,11 @@ for (const file of files) {
 		for (const [pattern, message] of literalRules) {
 			if (line.includes(pattern)) fail(rel, lineNo, message);
 		}
+		for (const [pattern, message] of regexRules) {
+			if (pattern.test(line)) fail(rel, lineNo, message);
+		}
+		const command = file.endsWith(".md") && line.match(bareSlashCommand);
+		if (command) fail(rel, lineNo, `bare /${command[1]}; pi invokes skills as /skill:${command[1]}`);
 		if (/\bomp\b/.test(line)) fail(rel, lineNo, "omp host branch; this port is pi-only");
 		if (subagentCallContext.test(line)) {
 			if (/\brole:/.test(line))
