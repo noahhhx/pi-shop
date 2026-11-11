@@ -20,7 +20,10 @@ sync source. Consider watching pi-mimir for port ideas, never sync from it.
 
 Keep only `skills/*` and `agents/*` (plus this repo's adapted
 `extensions/pstack/`). Exclude `make-bot-ui`, `setup-pstack`, `poteto-help`
-(Cursor-only), and everything outside `skills/` + `agents/`:
+(Cursor-only), `ketchup-video` (its whole output is an mp4 embedded inline
+in the chat reply; pi's terminal reply cannot play or embed video, and
+`ketchup` already covers the catch-up), and everything outside `skills/` +
+`agents/`:
 `.cursor-plugin`, `automations`, `docs`, `assets`, `README.md`, `LICENSE`
 (this tree carries its own). The exclusion list lives in `UPSTREAM.json`.
 
