@@ -13,14 +13,16 @@
   "dependencies": {
     "@ff-labs/pi-fff": "0.11.0",
     "@saccolabs/pi-claude-cli": "github:dmmulroy/pi-claude-cli#5f86053d7b7d1c3fcc2bfc82bcf00a76ac3cab1e",
-    "pi-herdr-agents": "3.9.0"
+    "pi-herdr-agents": "3.9.0",
+    "pi-web-access": "0.47.0"
   },
   "pi": {
     "extensions": [
       "extensions",
       "node_modules/@ff-labs/pi-fff",
       "node_modules/@saccolabs/pi-claude-cli",
-      "node_modules/pi-herdr-agents"
+      "node_modules/pi-herdr-agents",
+      "node_modules/pi-web-access"
     ],
     "skills": [
       "skills",
@@ -30,6 +32,7 @@
   "bundleDependencies": [
     "@ff-labs/pi-fff",
     "@saccolabs/pi-claude-cli",
-    "pi-herdr-agents"
+    "pi-herdr-agents",
+    "pi-web-access"
   ]
 }

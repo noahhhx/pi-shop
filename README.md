@@ -17,8 +17,9 @@ package, or as a plain git repo.
 - `package.json` / `package-lock.json` — third-party pi packages (npm
   dependencies, currently
   [pi-fff](https://github.com/dmtrKovalenko/fff/tree/main/packages/pi-fff),
-  [pi-herdr-agents](https://github.com/giuseppecrj/pi-herdr-agents), and
-  [pi-claude-cli](https://github.com/dmmulroy/pi-claude-cli));
+  [pi-herdr-agents](https://github.com/giuseppecrj/pi-herdr-agents),
+  [pi-claude-cli](https://github.com/dmmulroy/pi-claude-cli), and
+  [pi-web-access](https://github.com/nicobailon/pi-web-access));
   see [Third-party pi packages](#third-party-pi-packages)
 - `packages/` — their nix build, and pi itself (`pi.nix`)
 - `modules/` — the flake ([dendritic
@@ -158,6 +159,12 @@ upstream on npm.
 pi-claude-cli runs pi's model calls through the `claude` CLI on your Claude
 Pro/Max subscription. Log in once with `claude auth login`, then pick a
 `pi-claude-cli` model with `/model`.
+
+pi-web-access gives the agent web tools (`web_search`, `fetch_content`,
+`source_check`); pi-claude-cli turns off Claude Code's own WebSearch and
+WebFetch. With no keys configured, search goes to Exa's public MCP endpoint.
+To add providers, put keys in `~/.pi/agent/web-search.json` as `"$ENV_VAR"`
+or `"!command"` references, never as plaintext.
 
 pi-herdr-agents runs subagents in legacy Herdr (`HERDR_ENV=1`) or, since
 3.9.0, as child terminals of a Herdr Core terminal (picked from
