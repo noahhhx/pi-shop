@@ -71,6 +71,7 @@ const KINDS: Record<string, { label: (model?: string) => string; short?: string 
 	session: { label: () => "Current session", short: "5h" },
 	weekly_all: { label: () => "Current week (all models)", short: "wk" },
 	weekly_scoped: { label: (m) => `Current week (${m ?? "scoped"})` },
+	monthly_spend: { label: () => "Monthly spend", short: "spend" },
 };
 
 const credentialsPath = () =>
@@ -89,9 +90,39 @@ async function readToken(): Promise<string> {
 	return oauth.accessToken;
 }
 
+interface Money {
+	amount_minor: number;
+	exponent: number;
+	currency: string;
+}
+
+const money = (m: Money) =>
+	new Intl.NumberFormat([], {
+		style: "currency",
+		currency: m.currency,
+		minimumFractionDigits: m.exponent,
+		maximumFractionDigits: m.exponent,
+	}).format(m.amount_minor / 10 ** m.exponent);
+
+// Enterprise plans have no limits, only monthly spend against a cap.
+function spendRow(spend: any): Row | undefined {
+	if (!spend?.enabled) return undefined;
+	const amounts = [spend.used, spend.limit].filter((m) => m?.currency).map(money);
+	return {
+		kind: "monthly_spend",
+		label: KINDS.monthly_spend.label() + (amounts.length ? ` (${amounts.join(" / ")})` : ""),
+		percent: Number(spend.percent) || 0,
+		severity: String(spend.severity ?? "normal"),
+	};
+}
+
 function parseRows(body: unknown): Row[] {
-	const limits = (body as { limits?: unknown })?.limits;
+	const { limits, spend } = (body ?? {}) as { limits?: unknown; spend?: unknown };
 	if (!Array.isArray(limits)) throw new Error("unexpected usage response (no limits)");
+	if (!limits.length) {
+		const row = spendRow(spend);
+		return row ? [row] : [];
+	}
 	return limits.map((l) => {
 		const model = l?.scope?.model?.display_name ?? undefined;
 		const kind = String(l?.kind);
@@ -165,7 +196,8 @@ function report(u: Usage): string {
 	if (u.error) notes.push(`last refresh failed: ${u.error}`);
 	if (u.backoffUntil && u.backoffUntil > Date.now())
 		notes.push(`next try after ${new Date(u.backoffUntil).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`);
-	if (!u.rows?.length) return [`Claude usage: ${u.error ?? "no data"}`, ...notes.slice(1)].join("\n");
+	if (!u.rows) return [`Claude usage: ${u.error ?? "no data"}`, ...notes.slice(1)].join("\n");
+	if (!u.rows.length) return ["Claude usage: no limits", ...notes].join("\n");
 	const width = Math.max(...u.rows.map((r) => r.label.length));
 	const lines = u.rows.map(
 		(r) =>
@@ -178,7 +210,8 @@ function report(u: Usage): string {
 
 function footer(ctx: ExtensionContext, u: Usage): string {
 	const { theme } = ctx.ui;
-	if (!u.rows?.length) return theme.fg("dim", "claude usage: ") + theme.fg("warning", "unavailable");
+	if (!u.rows) return theme.fg("dim", "claude usage: ") + theme.fg("warning", "unavailable");
+	if (!u.rows.length) return theme.fg("dim", "claude usage: no limits") + (u.error ? theme.fg("dim", " (stale)") : "");
 	const stale = !!u.error;
 	const color = (s: string) => (s === "normal" ? "dim" : s === "warning" ? "warning" : "error");
 	const parts = u.rows
