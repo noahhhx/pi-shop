@@ -6,6 +6,6 @@
     "qa": "pi-claude-cli/claude-sonnet-5-5",
     "docs": "pi-claude-cli/claude-sonnet-5-5",
     "review": "pi-claude-cli/claude-opus-5-5",
-    "architecture": "pi-claude-cli/claude-fable-5-2"
+    "architecture": "pi-claude-cli/claude-opus-5-5"
   }
 }
