@@ -170,6 +170,20 @@ Orchestrate's "you, sub-coordinators, workers" uses depths 0 to 2, so a
 worker can still run one level of its own fan-out (a swarm) at depth 3,
 and that level cannot spawn.
 
+## Task list: `set_tasks` is ours
+
+Upstream's skills drive Cursor's built-in `set_tasks` tool (poteto-mode's
+"Start every multi-step task with `set_tasks`", playbook steps copied in
+as its first items). Pi has no such tool, so the pstack extension provides
+one (`extensions/pstack/tasks.ts`) under the same name: each call replaces
+the complete ordered list (`content`, `status` of `pending`, `in_progress`,
+`completed`, `cancelled`), state lives in tool-result details so it
+follows the session branch, a widget shows open lists, and `/tasks` prints
+it. Keep upstream's `set_tasks` prose verbatim; do not rewrite it to a file
+checklist. It registers with direct exposure, never deferred, so the model
+sees it without a `tool_search`. The sticky-mode injection names it.
+`scripts/pstack-check.mjs` checks that the extension still registers it.
+
 ## Transcripts
 
 Upstream globs `~/.cursor/projects/<slug>/agent-transcripts/*.jsonl`. The port

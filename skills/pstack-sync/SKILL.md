@@ -25,8 +25,8 @@ deltas, classify them, re-apply the adaptation layer, never blind-copy.
    drop Cursor-only frontmatter (`mode`, `icon`, `color`, `reminder`);
    Cursor idioms → pi idioms (control skills → detect-installed-or-drop,
    `AskQuestion` → classify-then-ask, subagent spawning → the pi-herdr-agents
-   `subagent` tool with N plain calls for parallel fan-out, task tracking →
-   `set_tasks`, cadence → explicit pi watchers); model routing stays
+   `subagent` tool with N plain calls for parallel fan-out, task tracking stays
+   `set_tasks`, which the pstack extension provides (keep upstream's prose), cadence → explicit pi watchers); model routing stays
    config-driven (`model: task:<category>`, exact IDs, or inherit-parent; no
    hardcoded slugs); strip every omp branch (this port is pi-only). When a
    call is genuinely hard (poteto-mode SKILL.md, playbooks), consult the

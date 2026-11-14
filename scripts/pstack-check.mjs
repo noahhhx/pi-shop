@@ -31,7 +31,7 @@
 // - a skill line that passes `worktree` to a spawn also names the `cwd` form,
 //   because Herdr Core refuses managed worktrees
 // - the vendored extension registers the role-pack discovery event and has
-//   an index.ts entry
+//   an index.ts entry, and registers set_tasks when any skill names it
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -247,6 +247,14 @@ for (const file of [...walk(skillsDir), ...walk(agentsDir), ...walk(extensionDir
 const roles = readFileSync(join(extensionDir, "roles.ts"), "utf8");
 if (!roles.includes("pi-herdr-subagents:roles:discover:v1"))
 	fail(relative(repoRoot, join(extensionDir, "roles.ts")), 0, "role-pack discovery event not registered");
+const tasksFile = join(extensionDir, "tasks.ts");
+const skillsUseSetTasks = files.some((f) => f.endsWith(".md") && readFileSync(f, "utf8").includes("set_tasks"));
+if (
+	skillsUseSetTasks &&
+	!(existsSync(tasksFile) && readFileSync(tasksFile, "utf8").includes('TASKS_TOOL = "set_tasks"') &&
+		readFileSync(join(extensionDir, "index.ts"), "utf8").includes("registerTasks(pi)"))
+)
+	fail(relative(repoRoot, tasksFile), 0, "skills use set_tasks but the extension does not register it; pi has no built-in set_tasks");
 for (const file of walk(extensionDir)) {
 	if (/\bomp\b/.test(readFileSync(file, "utf8")))
 		fail(relative(repoRoot, file), 0, "omp host detection; this port is pi-only");
